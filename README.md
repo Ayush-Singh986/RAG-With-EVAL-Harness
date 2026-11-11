@@ -216,10 +216,4 @@ For Linux/macOS, substitute shell-appropriate virtual-environment activation and
 
 After running the evaluations, replace “Pending” with measured counts (for example, `correct answers / evaluated questions`) and summarize the important trade-offs in [`DECISIONS.md`](DECISIONS.md). Do not report unrun experiments as results.
 
-## Git history
 
-This workspace did not have a Git repository when work began. I have not created a staged history or invented issue/fix commits. For a credible portfolio, keep a real Git history as changes are actually made, and describe each commit's real motivation, change, and test evidence. Do not present reconstructed or fabricated milestones as historical work.
-
-## Limitations and attribution
-
-The intended benchmark has 50 main questions from one handbook subset; it does not establish general performance. The handbook may have appeared in model training data. A no-retrieval control is required to interpret generated answer scores, and small differences may be noise. The source is the [GitLab Handbook](https://handbook.gitlab.com/); check and follow the license terms of the exact pinned revision before redistributing its cleaned content.
