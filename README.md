@@ -88,6 +88,128 @@ The RAG run writes per-question output to `results/answers_main.csv`; the no-ret
 
 See [`src/README.md`](src/README.md), [`data/README.md`](data/README.md), [`config/README.md`](config/README.md), [`tests/README.md`](tests/README.md), and [`results/README.md`](results/README.md) for per-file responsibilities and generated outputs. Each directory README explains what its files are for; `src/README.md` lists every project script.
 
+## Architecture
+
+The pipeline runs as a local batch workload. It does not expose a hosted HTTP API.
+
+![Simple RAG system architecture showing offline indexing, query and answer flow, and evaluation CI](docs/rag-architecture.svg)
+
+| Area | Flow |
+|---|---|
+| Offline indexing | Handbook → fetch/clean → chunk with source offsets → BGE embeddings → vector index and BM25 index. |
+| Query and answer | Question → vector + BM25 search → reciprocal-rank fusion → cross-encoder reranking → context-grounded answer. |
+| Evaluation and CI | Reviewed test sets → retrieval metrics and answer/control evaluation → CSV results → GitHub Actions regression check. |
+
+## Deployment and repeatable runs
+
+This is a **batch evaluation project**, not a continuously running website. “Deploy” means building its container and running the evaluation pipeline on a machine or CI runner. A hosted `/ask` endpoint is not implemented.
+
+### A. Prepare and validate the inputs
+
+1. Install Git, Python 3.11+, and Docker Desktop (Windows/macOS) or Docker Engine (Linux). Clone your GitHub repository and open its root folder.
+2. Set up Python and run the offline tests:
+
+   ```powershell
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   python -m pip install -r requirements.txt
+   python -m pytest -q
+   ```
+
+3. Before publishing handbook text, review `data/ATTRIBUTION.txt` and confirm the content redistribution terms. The handbook corpus is currently in `data/clean/`; the full clone is local and ignored by Git.
+4. Create `data/testset_main_src.json` and `data/testset_dev_src.json` with human-reviewed questions and exact passages copied from the cleaned files. Build and verify the positional sets:
+
+   ```powershell
+   python src\build_testset.py
+   python -m pytest -q
+   ```
+
+   The test-set tests remain skipped until both generated sets exist and have the expected reviewed shape.
+
+### B. Build and run the evaluation container
+
+5. Build the image from the project root. This installs the pinned Python dependencies and downloads the embedding and reranking models into the image:
+
+   ```powershell
+   docker build -t rag-eval:local .
+   ```
+
+   Expect a large image and an initial download. Rebuild when dependencies or model configuration change.
+6. Create host directories for persistent indexes and output files, then build the indexes. Keeping these as bind mounts means the files survive after the one-shot container exits:
+
+   ```powershell
+   New-Item -ItemType Directory -Force .cache, results | Out-Null
+   docker run --rm `
+     --mount "type=bind,source=$((Resolve-Path .cache).Path),target=/app/.cache" `
+     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
+     rag-eval:local
+   ```
+
+7. Run the dev experiment grid using the indexes created in the previous step:
+
+   ```powershell
+   docker run --rm `
+     --mount "type=bind,source=$((Resolve-Path .cache).Path),target=/app/.cache" `
+     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
+     rag-eval:local python src/run_grid.py
+   ```
+
+8. Select `config/best.json` from dev evidence, run the held-out main comparison as prescribed, and save a reviewed regression baseline:
+
+   ```powershell
+   docker run --rm `
+     --mount "type=bind,source=$((Resolve-Path .cache).Path),target=/app/.cache" `
+     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
+     rag-eval:local python src/ci_check.py --baseline results/baseline_perq.json --update
+   ```
+
+   Record the measured outcomes in `DECISIONS.md`. Do not describe the initial `best.json` as a measured winner before comparing the dev grid.
+
+### C. Optional answer-model evaluation
+
+9. Copy `.env.example` to `.env`; configure distinct OpenAI-compatible answer and judge models. Keep `.env` private. Do not bake credentials into the Docker image or commit them. Pass the file only to the run that needs it:
+
+   ```powershell
+   docker run --rm --env-file .env `
+     --mount "type=bind,source=$((Resolve-Path .cache).Path),target=/app/.cache" `
+     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
+     rag-eval:local python src/run_answers.py --control
+
+   docker run --rm --env-file .env `
+     --mount "type=bind,source=$((Resolve-Path .cache).Path),target=/app/.cache" `
+     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
+     rag-eval:local python src/run_answers.py
+   ```
+
+   The control run and RAG run produce separate CSVs. Check API-provider billing and review answers before using the scores.
+10. Generate the README chart only after both answer runs have completed:
+
+   ```powershell
+   docker run --rm `
+     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
+     rag-eval:local python src/plot_results.py
+   ```
+
+### D. Enable GitHub Actions deployment checks
+
+11. Create an empty GitHub repository, then from the local project root publish the current branch (replace the URL with your repository):
+
+   ```powershell
+   git init
+   git add .github config docs src tests data/README.md data/ATTRIBUTION.txt data/DATA_VERSION.txt results/README.md results/answer_comparison.svg README.md DECISIONS.md Dockerfile .dockerignore Makefile pytest.ini requirements.txt .env.example .gitignore
+   git commit -m "Build RAG evaluation pipeline and deployment docs"
+   git branch -M main
+   git remote add origin https://github.com/<your-user>/<your-repository>.git
+   git push -u origin main
+   ```
+
+   The staging command deliberately excludes handbook content, generated test sets, local caches, and `.env`. Only after confirming redistribution terms, add the approved corpus and reviewed benchmark files explicitly (for example `git add data/clean data/titles.json data/testset_main.json data/testset_dev.json results/baseline_perq.json`). Keep API credentials out of Git in all cases. Without the required benchmark inputs, GitHub Actions runs unit tests and reports the retrieval benchmark as skipped.
+12. In the GitHub repository, open **Settings → Actions → General** and allow the repository's workflows to run. The workflow at `.github/workflows/eval.yml` automatically runs unit tests for pushes to `main` and pull requests.
+13. The workflow enables index building and retrieval-regression checks only when the cleaned corpus, generated main test set, and reviewed baseline are committed and present. CI does not need LLM API keys and does not run answer generation.
+14. Open a pull request and confirm the `rag-eval` workflow passes. If retrieval inputs are missing, the workflow reports that the retrieval benchmark was skipped; this is not evidence that the retrieval benchmark passed.
+
+For Linux/macOS, substitute shell-appropriate virtual-environment activation and bind-mount paths. For an always-on API deployment, first implement and test an API server; the current Docker image is a finite CLI job and exits when its command finishes.
+
 ## Final output chart
 
 The circle chart below compares answers judged correct with and without retrieval. It is deliberately a placeholder until the reviewed benchmark and both answer runs exist—no scores are being guessed. After completing the evaluations, generate it from the CSV outputs:

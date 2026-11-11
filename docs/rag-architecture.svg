@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title description">
+  <title id="title">RAG evaluation system architecture</title>
+  <desc id="description">A flat system design with an offline data and index build, a query and answer flow using vector and BM25 retrieval followed by rank fusion and reranking, and a separate evaluation and CI path for held-out test sets and regression baselines.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0L10 5L0 10z" fill="#74869a"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0L10 5L0 10z" fill="#16856b"/>
+    </marker>
+    <style>
+      .title { font: 700 25px Inter, Segoe UI, sans-serif; fill: #152538; }
+      .subtitle { font: 14px Inter, Segoe UI, sans-serif; fill: #5b6b7c; }
+      .lane { fill: #f7f9fc; stroke: #dce4ed; stroke-width: 1.4; }
+      .lane-title { font: 700 15px Inter, Segoe UI, sans-serif; fill: #31455b; }
+      .box { fill: #fff; stroke: #bdcbd9; stroke-width: 1.4; }
+      .box-blue { fill: #eef5ff; stroke: #9cbce7; stroke-width: 1.5; }
+      .box-green { fill: #eaf7f2; stroke: #8bc7ad; stroke-width: 1.5; }
+      .box-purple { fill: #f4f0ff; stroke: #b6a7e5; stroke-width: 1.5; }
+      .box-orange { fill: #fff5e9; stroke: #e2bd8c; stroke-width: 1.5; }
+      .label { font: 650 14px Inter, Segoe UI, sans-serif; fill: #203348; }
+      .detail { font: 12px Inter, Segoe UI, sans-serif; fill: #5b6b7c; }
+      .small { font: 11px Inter, Segoe UI, sans-serif; fill: #637386; }
+      .edge { fill: none; stroke: #74869a; stroke-width: 2; marker-end: url(#arrow); }
+      .edge-green { fill: none; stroke: #16856b; stroke-width: 2; marker-end: url(#arrowGreen); }
+      .edge-dashed { fill: none; stroke: #8b79c5; stroke-width: 1.8; stroke-dasharray: 6 5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" rx="18" fill="#fff"/>
+  <text x="52" y="46" class="title">RAG evaluation system</text>
+  <text x="52" y="72" class="subtitle">Offline document indexing → query-time retrieval and answers → evaluation and CI</text>
+
+  <rect x="36" y="96" width="1128" height="188" rx="14" class="lane"/>
+  <text x="58" y="124" class="lane-title">1 · OFFLINE DATA &amp; INDEX BUILD</text>
+
+  <rect x="66" y="155" width="190" height="82" rx="10" class="box"/>
+  <text x="161" y="184" text-anchor="middle" class="label">GitLab Handbook</text>
+  <text x="161" y="207" text-anchor="middle" class="detail">Pinned source revision</text>
+  <path d="M256 196H300" class="edge"/>
+
+  <rect x="308" y="155" width="190" height="82" rx="10" class="box"/>
+  <text x="403" y="184" text-anchor="middle" class="label">Fetch &amp; clean</text>
+  <text x="403" y="207" text-anchor="middle" class="detail">Sampled Markdown files</text>
+  <path d="M498 196H542" class="edge"/>
+
+  <rect x="550" y="155" width="190" height="82" rx="10" class="box-blue"/>
+  <text x="645" y="184" text-anchor="middle" class="label">Chunk documents</text>
+  <text x="645" y="207" text-anchor="middle" class="detail">Text + file + offsets</text>
+  <path d="M740 196H784" class="edge"/>
+
+  <rect x="792" y="155" width="158" height="82" rx="10" class="box-purple"/>
+  <text x="871" y="184" text-anchor="middle" class="label">BGE embeddings</text>
+  <text x="871" y="207" text-anchor="middle" class="detail">Normalized vectors</text>
+  <path d="M950 196H994" class="edge"/>
+
+  <rect x="1002" y="145" width="137" height="48" rx="9" class="box-green"/>
+  <text x="1070" y="174" text-anchor="middle" class="label">Vector index</text>
+  <rect x="1002" y="201" width="137" height="48" rx="9" class="box-orange"/>
+  <text x="1070" y="230" text-anchor="middle" class="label">BM25 index</text>
+  <path d="M740 222V260H984V225H994" class="edge"/>
+  <text x="861" y="256" text-anchor="middle" class="small">same chunks → lexical index</text>
+
+  <rect x="36" y="304" width="1128" height="222" rx="14" class="lane"/>
+  <text x="58" y="332" class="lane-title">2 · QUERY &amp; ANSWER FLOW</text>
+
+  <rect x="66" y="374" width="146" height="78" rx="10" class="box"/>
+  <text x="139" y="403" text-anchor="middle" class="label">User question</text>
+  <text x="139" y="426" text-anchor="middle" class="detail">Natural language</text>
+
+  <path d="M212 412H256V382H302" class="edge"/>
+  <path d="M256 412V470H302" class="edge"/>
+
+  <rect x="310" y="348" width="188" height="68" rx="10" class="box-green"/>
+  <text x="404" y="376" text-anchor="middle" class="label">Vector search</text>
+  <text x="404" y="398" text-anchor="middle" class="detail">BGE query → cosine top-N</text>
+  <rect x="310" y="438" width="188" height="68" rx="10" class="box-orange"/>
+  <text x="404" y="466" text-anchor="middle" class="label">BM25 search</text>
+  <text x="404" y="488" text-anchor="middle" class="detail">Keyword ranking → top-N</text>
+
+  <path d="M498 382H548V413H576" class="edge"/>
+  <path d="M498 472H548V437H576" class="edge"/>
+  <rect x="584" y="374" width="170" height="92" rx="10" class="box-blue"/>
+  <text x="669" y="407" text-anchor="middle" class="label">Rank fusion</text>
+  <text x="669" y="430" text-anchor="middle" class="detail">Reciprocal rank fusion</text>
+
+  <path d="M754 420H794" class="edge"/>
+  <rect x="802" y="374" width="168" height="92" rx="10" class="box-purple"/>
+  <text x="886" y="407" text-anchor="middle" class="label">Cross-encoder</text>
+  <text x="886" y="430" text-anchor="middle" class="detail">Rerank candidates</text>
+
+  <path d="M970 420H1004" class="edge"/>
+  <rect x="1012" y="374" width="127" height="92" rx="10" class="box-green"/>
+  <text x="1075" y="407" text-anchor="middle" class="label">Answer</text>
+  <text x="1075" y="430" text-anchor="middle" class="detail">Context + LLM</text>
+
+  <path d="M1070 249V326H404V348" class="edge-dashed"/>
+  <text x="765" y="320" text-anchor="middle" class="small">persisted indexes loaded at runtime</text>
+  <path d="M1070 249V338H404V438" class="edge-dashed"/>
+
+  <rect x="36" y="546" width="1128" height="174" rx="14" class="lane"/>
+  <text x="58" y="574" class="lane-title">3 · EVALUATION &amp; CONTINUOUS INTEGRATION</text>
+
+  <rect x="72" y="606" width="205" height="78" rx="10" class="box"/>
+  <text x="174" y="635" text-anchor="middle" class="label">Reviewed test sets</text>
+  <text x="174" y="658" text-anchor="middle" class="detail">Dev + held-out main</text>
+
+  <path d="M277 645H320" class="edge"/>
+  <rect x="328" y="606" width="208" height="78" rx="10" class="box-blue"/>
+  <text x="432" y="635" text-anchor="middle" class="label">Retrieval metrics</text>
+  <text x="432" y="658" text-anchor="middle" class="detail">Hit · recall · MRR · latency</text>
+
+  <path d="M536 645H579" class="edge"/>
+  <rect x="587" y="606" width="208" height="78" rx="10" class="box-purple"/>
+  <text x="691" y="635" text-anchor="middle" class="label">Answer evaluation</text>
+  <text x="691" y="658" text-anchor="middle" class="detail">Judge model + no-RAG control</text>
+
+  <path d="M795 645H838" class="edge"/>
+  <rect x="846" y="606" width="260" height="78" rx="10" class="box-green"/>
+  <text x="976" y="635" text-anchor="middle" class="label">CSV results &amp; CI regression check</text>
+  <text x="976" y="658" text-anchor="middle" class="detail">GitHub Actions · no API key in CI</text>
+
+  <path d="M669 466V570H432V606" class="edge-dashed"/>
+  <path d="M1075 466V564H691V606" class="edge-dashed"/>
+</svg>
