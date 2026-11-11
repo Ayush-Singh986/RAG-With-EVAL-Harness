@@ -182,21 +182,13 @@ This is a **batch evaluation project**, not a continuously running website. “D
    ```
 
    The control run and RAG run produce separate CSVs. Check API-provider billing and review answers before using the scores.
-10. Generate the README chart only after both answer runs have completed:
-
-   ```powershell
-   docker run --rm `
-     --mount "type=bind,source=$((Resolve-Path results).Path),target=/app/results" `
-     rag-eval:local python src/plot_results.py
-   ```
-
 ### D. Enable GitHub Actions deployment checks
 
 11. Create an empty GitHub repository, then from the local project root publish the current branch (replace the URL with your repository):
 
    ```powershell
    git init
-   git add .github config docs src tests data/README.md data/ATTRIBUTION.txt data/DATA_VERSION.txt results/README.md results/answer_comparison.svg README.md DECISIONS.md Dockerfile .dockerignore Makefile pytest.ini requirements.txt .env.example .gitignore
+   git add .github config docs src tests data/README.md data/ATTRIBUTION.txt data/DATA_VERSION.txt results/README.md README.md DECISIONS.md Dockerfile .dockerignore Makefile pytest.ini requirements.txt .env.example .gitignore
    git commit -m "Build RAG evaluation pipeline and deployment docs"
    git branch -M main
    git remote add origin https://github.com/<your-user>/<your-repository>.git
@@ -210,17 +202,19 @@ This is a **batch evaluation project**, not a continuously running website. “D
 
 For Linux/macOS, substitute shell-appropriate virtual-environment activation and bind-mount paths. For an always-on API deployment, first implement and test an API server; the current Docker image is a finite CLI job and exits when its command finishes.
 
-## Final output chart
+## Results
 
-The circle chart below compares answers judged correct with and without retrieval. It is deliberately a placeholder until the reviewed benchmark and both answer runs exist—no scores are being guessed. After completing the evaluations, generate it from the CSV outputs:
+**Status: pending evaluation.** The handbook corpus is prepared, but reviewed main/dev question sets and model-backed answer runs have not been completed. No retrieval or answer-quality scores are claimed.
 
-```powershell
-python src\plot_results.py
-```
+| Evaluation | Result | Output |
+|---|---:|---|
+| Main-set answer quality without retrieval | Pending | `results/answers_control.csv` |
+| Main-set answer quality with RAG | Pending | `results/answers_main.csv` |
+| Retrieval setup comparison (24 combinations) | Pending | `results/grid.csv` |
+| Headline retrieval methods | Pending | `results/headline.csv` |
+| Missed-question analysis | Pending | `results/failures.csv` |
 
-The script checks that both files contain the same question IDs and uses their measured `correct` values.
-
-![Measured RAG and no-retrieval answer-quality donut chart](results/answer_comparison.svg)
+After running the evaluations, replace “Pending” with measured counts (for example, `correct answers / evaluated questions`) and summarize the important trade-offs in [`DECISIONS.md`](DECISIONS.md). Do not report unrun experiments as results.
 
 ## Git history
 

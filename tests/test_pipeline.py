@@ -7,7 +7,6 @@ from build_testset import build
 from chunkers import by_heading, fixed, sentence_spans
 from common import ROOT
 from metrics import covered, score_question
-from plot_results import build_svg, read_answers
 from retrievers import Retriever, rrf
 
 
@@ -75,27 +74,6 @@ def test_multidocument_scoring_requires_all_passages():
     assert score_question(question, chunks, 4) == {
         "id": 1, "hit": True, "ok": False, "recall": 0.5, "mrr": 1.0,
     }
-
-
-def test_answer_chart_uses_measured_values_and_compares_same_questions():
-    rag = {"1": True, "2": False, "3": True}
-    control = {"1": False, "2": False, "3": True}
-    svg = build_svg(rag, control)
-    assert "67%" in svg
-    assert "2/3 correct" in svg
-    assert "1/3 correct" in svg
-    with pytest.raises(ValueError, match="same question IDs"):
-        build_svg(rag, {"1": True})
-
-
-def test_answer_csv_reader_validates_and_reads_boolean_values(tmp_path):
-    answers = tmp_path / "answers.csv"
-    answers.write_text("id,correct\n1,True\n2,false\n", encoding="utf-8")
-    assert read_answers(answers) == {"1": True, "2": False}
-
-    answers.write_text("id,correct\n1,maybe\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="invalid correct value"):
-        read_answers(answers)
 
 
 def test_build_testset_computes_exact_positions(tmp_path):

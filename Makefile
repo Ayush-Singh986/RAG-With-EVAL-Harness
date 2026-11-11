@@ -1,4 +1,4 @@
-.PHONY: data testset index grid answers control threshold failures chart test ci
+.PHONY: data testset index grid answers control threshold failures test ci
 
 data:
 	python src/fetch_data.py
@@ -24,9 +24,6 @@ threshold:
 
 failures:
 	python src/failures.py
-
-chart:
-	python src/plot_results.py
 
 test:
 	pytest -q

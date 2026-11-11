@@ -19,6 +19,5 @@ Every script here implements one stage of the RAG evaluation pipeline. Run scrip
 | `calibrate_threshold.py` | Measures the answerable/no-answer trade-off for reranker thresholds on dev questions. |
 | `failures.py` | Exports missed dev questions and top retrieved evidence for manual diagnosis. |
 | `ci_check.py` | Fails if a question that passed in the reviewed baseline regresses. |
-| `plot_results.py` | Creates the README donut chart from actual RAG and control answer CSVs. |
 
 Generated files are written to `data/`, `results/`, or `.cache/` as indicated; source inputs and measured outputs are not silently synthesized by these scripts.
