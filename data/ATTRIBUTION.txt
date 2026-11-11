@@ -1,0 +1,5 @@
+Source: GitLab Handbook
+Repository: https://gitlab.com/gitlab-com/content-sites/handbook
+Revision: 539e7d1d7e05c89dde7b20dfeb59ed968349c800
+
+The source repository's LICENSE describes terms for "GitLab Software"; it does not clearly state a content-specific license for handbook text. Confirm redistribution rights before publishing or sharing the cleaned corpus.

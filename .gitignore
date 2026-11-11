@@ -1,0 +1,13 @@
+.venv/
+.cache/
+.env
+__pycache__/
+.pytest_cache/
+*.py[cod]
+data/handbook_full/
+data/raw/*
+!data/raw/.gitkeep
+results/*
+!results/.gitkeep
+!results/README.md
+!results/answer_comparison.svg

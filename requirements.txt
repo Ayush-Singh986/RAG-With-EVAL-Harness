@@ -1,0 +1,10 @@
+sentence-transformers==3.4.1
+rank_bm25==0.2.2
+numpy==1.26.4
+pandas==2.2.3
+pytest==8.3.4
+python-dotenv==1.0.1
+torch==2.6.0
+transformers==4.48.3
+huggingface-hub==0.28.1
+tqdm==4.67.1

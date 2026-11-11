@@ -1,0 +1,6 @@
+{
+  "chunker": "heading",
+  "search": "hybrid",
+  "rerank": true,
+  "add_title": false
+}

@@ -1,0 +1,10 @@
+.git
+.venv
+.cache
+__pycache__
+.pytest_cache
+.qodo
+.env
+data/handbook_full
+data/raw
+*.py[cod]

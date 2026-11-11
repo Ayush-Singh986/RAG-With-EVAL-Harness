@@ -1,0 +1,39 @@
+name: rag-eval
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+
+      - name: Restore retrieval cache
+        if: ${{ hashFiles('data/clean/*.md', 'data/testset_main.json', 'results/baseline_perq.json') != '' }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            .cache
+          key: rag-${{ hashFiles('requirements.txt', 'src/chunkers.py', 'src/index.py', 'data/clean/**') }}
+
+      - name: Build indexes
+        if: ${{ hashFiles('data/clean/*.md', 'data/testset_main.json', 'results/baseline_perq.json') != '' }}
+        run: python src/index.py
+
+      - name: Check retrieval regressions
+        if: ${{ hashFiles('data/clean/*.md', 'data/testset_main.json', 'results/baseline_perq.json') != '' }}
+        run: python src/ci_check.py --baseline results/baseline_perq.json
+
+      - name: Explain skipped benchmark
+        if: ${{ hashFiles('data/clean/*.md', 'data/testset_main.json', 'results/baseline_perq.json') == '' }}
+        run: echo "Retrieval evaluation skipped: commit cleaned documents, test sets, and a reviewed baseline to enable it."
